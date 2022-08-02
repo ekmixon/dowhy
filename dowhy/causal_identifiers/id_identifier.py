@@ -51,10 +51,10 @@ class IDExpression:
         '''
         if estimator is None:
             return None
-            
+
         string = ""
         if isinstance(estimator, IDExpression):
-            s = True if len(estimator.get_val(return_type="sum"))>0 else False
+            s = len(estimator.get_val(return_type="sum")) > 0
             if s:
                 sum_vars = "{" + ",".join(estimator.get_val(return_type="sum")) + "}"
                 string += prefix + "Sum over " + sum_vars + ":\n"
@@ -69,7 +69,7 @@ class IDExpression:
             outcome_vars = list(estimator['outcome_vars'])
             condition_vars = list(estimator['condition_vars'])
             string += prefix + "Predictor: P(" + ",".join(outcome_vars)
-            if len(condition_vars)>0:
+            if condition_vars:
                 string += "|" + ",".join(condition_vars)
             string += ")\n"
         if start:
@@ -78,10 +78,7 @@ class IDExpression:
 
     def __str__(self):
         string = self._print_estimator(prefix="", estimator=self, start=True)
-        if string is None:
-            return "The graph is not identifiable."
-        else:
-            return string
+        return "The graph is not identifiable." if string is None else string
 
 class IDIdentifier(CausalIdentifier):
 
@@ -134,17 +131,15 @@ class IDIdentifier(CausalIdentifier):
         if node_names is None:
             node_names = self._node_names
         node2idx, idx2node = self._idx_node_mapping(node_names)
-        
+
         # Estimators list for returning after identification
         estimators = IDExpression()
 
         # Line 1
-        # If no action has been taken, the effect on Y is just the marginal of the observational distribution P(v) on Y. 
+        # If no action has been taken, the effect on Y is just the marginal of the observational distribution P(v) on Y.
         if len(treatment_names) == 0:
             identifier = IDExpression()
-            estimator = {}
-            estimator['outcome_vars'] = node_names
-            estimator['condition_vars'] = OrderedSet()
+            estimator = {'outcome_vars': node_names, 'condition_vars': OrderedSet()}
             identifier.add_product(estimator)
             identifier.add_sum(node_names.difference(outcome_names))
             estimators.add_product(identifier)
@@ -159,7 +154,7 @@ class IDIdentifier(CausalIdentifier):
             node_names = node_names.intersection(ancestors)
             adjacency_matrix = induced_graph(node_set=node_names, adjacency_matrix=adjacency_matrix, node2idx=node2idx)
             return self.identify_effect(treatment_names=treatment_names, outcome_names=outcome_names, adjacency_matrix=adjacency_matrix, node_names=node_names)
-        
+
         # Line 3 - forces an action on any node where such an action would have no effect on Y – assuming we already acted on X. 
         # Modify adjacency matrix to obtain that corresponding to do(X)
         adjacency_matrix_do_x = adjacency_matrix.copy()
@@ -171,7 +166,7 @@ class IDIdentifier(CausalIdentifier):
         W = node_names.difference(treatment_names).difference(ancestors)
         if len(W) != 0:
             return self.identify_effect(treatment_names = treatment_names.union(W), outcome_names=outcome_names, adjacency_matrix=adjacency_matrix, node_names=node_names)
-        
+
         # Line 4 - Decomposes the problem into a set of smaller problems using the key property of C-component factorization of causal models.
         # If the entire graph is a single C-component already, further problem decomposition is impossible, and we must provide base cases.
         # Modify adjacency matrix to remove treatment variables
@@ -190,13 +185,13 @@ class IDIdentifier(CausalIdentifier):
             estimators.add_product(identifier)
             return estimators
 
-        
+
         # Line 5 - The algorithms fails due to the presence of a hedge - the graph G, and a subgraph S that does not contain any X nodes.
         S = c_components[0]
         c_components_G = find_c_components(adjacency_matrix=adjacency_matrix, node_set=node_names, idx2node=idx2node)
         if len(c_components_G)==1 and c_components_G[0] == node_names:
             return None
-    
+
         # Line 6 - If there are no bidirected arcs from X to the other nodes in the current subproblem under consideration, then we can replace acting on X by conditioning, and thus solve the subproblem.
         if S in c_components_G:
             sum_over_set = S.difference(outcome_names)

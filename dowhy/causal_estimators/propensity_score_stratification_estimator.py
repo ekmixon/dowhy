@@ -51,13 +51,11 @@ class PropensityScoreStratificationEstimator(PropensityScoreEstimator):
                 self.propensity_score_model = linear_model.LogisticRegression()
             self.propensity_score_model.fit(self._observed_common_causes, self._treatment)
             self._data[self.propensity_score_column] = self.propensity_score_model.predict_proba(self._observed_common_causes)[:, 1]
-        else:
-            # check if the user provides the propensity score column
-            if self.propensity_score_column not in self._data.columns:
-                raise ValueError(f"Propensity score column {self.propensity_score_column} does not exist. Please specify the column name that has your pre-computed propensity score.")
-            else:
-                self.logger.info(f"INFO: Using pre-computed propensity score incolumn {self.propensity_score_column}")
+        elif self.propensity_score_column in self._data.columns:
+            self.logger.info(f"INFO: Using pre-computed propensity score incolumn {self.propensity_score_column}")
 
+        else:
+            raise ValueError(f"Propensity score column {self.propensity_score_column} does not exist. Please specify the column name that has your pre-computed propensity score.")
         # sort the dataframe by propensity score
         # create a column 'strata' for each element that marks what strata it belongs to
         num_rows = self._data[self._outcome_name].shape[0]
@@ -108,15 +106,14 @@ class PropensityScoreStratificationEstimator(PropensityScoreEstimator):
         else:
             raise ValueError("Target units string value not supported")
 
-        # TODO - how can we add additional information into the returned estimate?
-        #        such as how much clipping was done, or per-strata info for debugging?
-        estimate = CausalEstimate(estimate=est,
-                                  control_value=self._control_value,
-                                  treatment_value=self._treatment_value,
-                                  target_estimand=self._target_estimand,
-                                  realized_estimand_expr=self.symbolic_estimator,
-                                  propensity_scores = self._data[self.propensity_score_column])
-        return estimate
+        return CausalEstimate(
+            estimate=est,
+            control_value=self._control_value,
+            treatment_value=self._treatment_value,
+            target_estimand=self._target_estimand,
+            realized_estimand_expr=self.symbolic_estimator,
+            propensity_scores=self._data[self.propensity_score_column],
+        )
 
     def construct_symbolic_estimator(self, estimand):
         expr = "b: " + ",".join(estimand.outcome_variable) + "~"

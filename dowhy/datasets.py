@@ -36,14 +36,21 @@ def convert_to_categorical(arr, num_vars, num_discrete_vars,
 
 def construct_col_names(name, num_vars, num_discrete_vars,
         num_discrete_levels, one_hot_encode):
-    colnames = [(name + str(i)) for i in range(0, num_vars - num_discrete_vars)]
+    colnames = [name + str(i) for i in range(num_vars - num_discrete_vars)]
     if one_hot_encode:
-        discrete_colnames =  [name+str(i) + "_" + str(j)
-                                for i in range(num_vars - num_discrete_vars, num_vars)
-                                    for j in range(0, num_discrete_levels)]
-        colnames = colnames + discrete_colnames
+        discrete_colnames = [
+            name + str(i) + "_" + str(j)
+            for i in range(num_vars - num_discrete_vars, num_vars)
+            for j in range(num_discrete_levels)
+        ]
+
+        colnames += discrete_colnames
     else:
-        colnames = colnames  + [(name + str(i)) for i in range(num_vars-num_discrete_vars, num_vars)]
+        colnames += [
+            (name + str(i))
+            for i in range(num_vars - num_discrete_vars, num_vars)
+        ]
+
 
     return colnames
 
@@ -126,10 +133,7 @@ def linear_dataset(beta, num_common_causes, num_samples, num_instruments=0,
 
     def _compute_y(t, W, X, FD, beta, c2, ce, cfd2):
         y = np.random.normal(0,0.01, num_samples)
-        if num_frontdoor_variables > 0:
-            y += FD @ cfd2
-        else:
-            y += t @ beta
+        y += FD @ cfd2 if num_frontdoor_variables > 0 else t @ beta
         if num_common_causes > 0:
             y += W @ c2
         if num_effect_modifiers > 0:
@@ -161,13 +165,13 @@ def linear_dataset(beta, num_common_causes, num_samples, num_instruments=0,
             _compute_y(T1, W_with_dummy, X_with_categorical, FD_T1, beta, c2, ce, cfd2) -
             _compute_y(T0, W_with_dummy, X_with_categorical, FD_T0, beta, c2, ce, cfd2))
 
-    treatments = [("v" + str(i)) for i in range(0, num_treatments)]
+    treatments = [f"v{str(i)}" for i in range(num_treatments)]
     outcome = "y"
     # constructing column names for one-hot encoded discrete features
     common_causes = construct_col_names("W", num_common_causes, num_discrete_common_causes,
             num_discrete_levels=4, one_hot_encode=one_hot_encode)
-    instruments = [("Z" + str(i)) for i in range(0, num_instruments)]
-    frontdoor_variables = [("FD" + str(i)) for i in range(0, num_frontdoor_variables)]
+    instruments = [f"Z{str(i)}" for i in range(num_instruments)]
+    frontdoor_variables = [f"FD{str(i)}" for i in range(num_frontdoor_variables)]
     effect_modifiers = construct_col_names("X", num_effect_modifiers,
             num_discrete_effect_modifiers,
             num_discrete_levels=4, one_hot_encode=one_hot_encode)

@@ -11,11 +11,11 @@ def adjacency_matrix_to_adjacency_list(adjacency_matrix, labels=None):
     :returns: Adjacency list as a dictionary.
     '''
 
-    adjlist = dict()
+    adjlist = {}
     if labels is None:
         labels = [str(i+1) for i in range(adjacency_matrix.shape[0])]
     for i in range(adjacency_matrix.shape[0]):
-        adjlist[labels[i]] = list()
+        adjlist[labels[i]] = []
         for j in range(adjacency_matrix.shape[1]):
             if adjacency_matrix[i, j] != 0:
                 adjlist[labels[i]].append(labels[j])
@@ -34,7 +34,7 @@ def adjacency_matrix_to_graph(adjacency_matrix, labels=None):
     dirs = np.where(idx)
     import graphviz
     d = graphviz.Digraph(engine='dot')
-    names = labels if labels else [f'x{i}' for i in range(len(adjacency_matrix))]
+    names = labels or [f'x{i}' for i in range(len(adjacency_matrix))]
     for name in names:
         d.node(name)
     for to, from_, coef in zip(dirs[0], dirs[1], adjacency_matrix[idx]):
@@ -111,7 +111,7 @@ def find_c_components(adjacency_matrix, node_set, idx2node):
     adjacency_list = [[] for _ in range(num_nodes)]
 
     # Modify graph such that it only contains bidirected edges
-    for h in range(0, num_nodes-1):
+    for h in range(num_nodes-1):
         for w in range(h+1, num_nodes):
             if adjacency_matrix[h, w]==1 and adjacency_matrix[w, h]==1:
                 adjacency_list[h].append(w)

@@ -13,7 +13,8 @@ class DistanceMatchingEstimator(CausalEstimator):
         super().__init__(*args, **kwargs)
         # Check if the treatment is one-dimensional
         if len(self._treatment_name) > 1:
-            error_msg = str(self.__class__) + "cannot handle more than one treatment variable"
+            error_msg = f"{str(self.__class__)}cannot handle more than one treatment variable"
+
             raise Exception(error_msg)
         # Checking if the treatment is binary
         if not pd.api.types.is_bool_dtype(self._data[self._treatment_name[0]]):
@@ -90,6 +91,8 @@ class DistanceMatchingEstimator(CausalEstimator):
             raise ValueError("Target units string value not supported")
 
         if fit_att:
+            att = 0
+
             # estimate ATT on treated by summing over difference between matched neighbors
             if self.exact_match_cols is None:
                 control_neighbors = (
@@ -104,19 +107,17 @@ class DistanceMatchingEstimator(CausalEstimator):
                 self.logger.debug("distances:")
                 self.logger.debug(distances)
 
-                att = 0
-
                 for i in range(numtreatedunits):
                     treated_outcome = treated.iloc[i][self._outcome_name].item()
                     control_outcome = np.mean(control.iloc[indices[i]][self._outcome_name].values)
                     att += treated_outcome - control_outcome
 
                 att /= numtreatedunits
-                if self._target_units == "att":
-                    est = att
-                elif self._target_units == "ate":
+                if self._target_units == "ate":
                     est = att*numtreatedunits
 
+                elif self._target_units == "att":
+                    est = att
                 # Return indices in the original dataframe
                 self.matched_indices_att = {}
                 treated_df_index = treated.index.tolist()
@@ -124,7 +125,6 @@ class DistanceMatchingEstimator(CausalEstimator):
                     self.matched_indices_att[treated_df_index[i]] = control.iloc[indices[i]].index.tolist()
             else:
                 grouped = updated_df.groupby(self.exact_match_cols)
-                att = 0
                 for name, group in grouped:
                     treated = group.loc[group[self._treatment_name[0]] == 1]
                     control = group.loc[group[self._treatment_name[0]] == 0]
@@ -150,11 +150,11 @@ class DistanceMatchingEstimator(CausalEstimator):
 
                 att /= numtreatedunits
 
-                if self._target_units == "att":
-                    est = att
-                elif self._target_units == "ate":
+                if self._target_units == "ate":
                     est = att*numtreatedunits
 
+                elif self._target_units == "att":
+                    est = att
         if fit_atc:
             #Now computing ATC
             treated_neighbors = (
@@ -187,12 +187,13 @@ class DistanceMatchingEstimator(CausalEstimator):
             for i in range(numcontrolunits):
                 self.matched_indices_atc[control_df_index[i]] = treated.iloc[indices[i]].index.tolist()
 
-        estimate = CausalEstimate(estimate=est,
-                                  control_value=self._control_value,
-                                  treatment_value=self._treatment_value,
-                                  target_estimand=self._target_estimand,
-                                  realized_estimand_expr=self.symbolic_estimator)
-        return estimate
+        return CausalEstimate(
+            estimate=est,
+            control_value=self._control_value,
+            treatment_value=self._treatment_value,
+            target_estimand=self._target_estimand,
+            realized_estimand_expr=self.symbolic_estimator,
+        )
 
     def construct_symbolic_estimator(self, estimand):
         expr = "b: " + ", ".join(estimand.outcome_variable) + "~"

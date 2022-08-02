@@ -48,8 +48,7 @@ class RegressionDiscontinuityEstimator(CausalEstimator):
             test_significance=self._significance_test,
             params={'iv_instrument_name': 'local_rd_variable'}
         )
-        est = iv_estimator.estimate_effect()
-        return est
+        return iv_estimator.estimate_effect()
 
     def construct_symbolic_estimator(self, estimand):
         return ""

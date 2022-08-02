@@ -21,7 +21,8 @@ class TwoStageRegressionEstimator(CausalEstimator):
         self.logger.info("INFO: Using Two Stage Regression Estimator")
         # Check if the treatment is one-dimensional
         if len(self._treatment_name) > 1:
-            error_msg = str(self.__class__) + "cannot handle more than one treatment variable"
+            error_msg = f"{str(self.__class__)}cannot handle more than one treatment variable"
+
             raise Exception(error_msg)
 
         if self._target_estimand.identifier_method == "frontdoor":
@@ -178,7 +179,10 @@ class TwoStageRegressionEstimator(CausalEstimator):
             raise ValueError("Provided treatment values and dataframe should have the same length.")
         # Bulding the feature matrix
         n_samples = treatment_vals.shape[0]
-        self.logger.debug("Number of samples" +str(n_samples) + str(len(self._treatment_name)))
+        self.logger.debug(
+            f"Number of samples{str(n_samples)}{len(self._treatment_name)}"
+        )
+
         treatment_2d = treatment_vals.reshape((n_samples,len(self._treatment_name)))
         if len(self._observed_common_causes_names)>0:
             features = np.concatenate((treatment_2d, observed_common_causes_vals),

@@ -70,12 +70,13 @@ class InstrumentalVariableEstimator(CausalEstimator):
             reg_results = ivmodel.fit()
             print(reg_results.summary())
             iv_est = sum(reg_results.params) # the effect is the same for any treatment value (assume treatment goes from 0 to 1)
-        estimate = CausalEstimate(estimate=iv_est,
-                                  control_value=self._control_value,
-                                  treatment_value=self._treatment_value,
-                                  target_estimand=self._target_estimand,
-                                  realized_estimand_expr=self.symbolic_estimator)
-        return estimate
+        return CausalEstimate(
+            estimate=iv_est,
+            control_value=self._control_value,
+            treatment_value=self._treatment_value,
+            target_estimand=self._target_estimand,
+            realized_estimand_expr=self.symbolic_estimator,
+        )
 
     def construct_symbolic_estimator(self, estimand):
         sym_outcome = (spstats.Normal(",".join(estimand.outcome_variable), 0, 1))

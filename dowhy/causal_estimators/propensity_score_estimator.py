@@ -24,7 +24,8 @@ class PropensityScoreEstimator(CausalEstimator):
 
         # Check if the treatment is one-dimensional
         if len(self._treatment_name) > 1:
-            error_msg = str(self.__class__) + "cannot handle more than one treatment variable"
+            error_msg = f"{str(self.__class__)}cannot handle more than one treatment variable"
+
             raise Exception(error_msg)
         # Checking if the treatment is binary
         if not pd.api.types.is_bool_dtype(self._data[self._treatment_name[0]]):
@@ -34,7 +35,7 @@ class PropensityScoreEstimator(CausalEstimator):
 
         self.logger.debug("Back-door variables used:" +
                         ",".join(self._target_estimand.get_backdoor_variables()))
-        
+
         self._observed_common_causes_names = self._target_estimand.get_backdoor_variables()
 
         if self._observed_common_causes_names:

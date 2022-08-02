@@ -12,10 +12,7 @@ class QuadraticDataGeneratingProcess(DataGeneratingProcess):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.auto_gen = False
-
-        if self.weights == {} and self.bias == {}:
-            self.auto_gen = True
+        self.auto_gen = self.weights == {} and self.bias == {}
 
     def generate_data(self, sample_size):
         self.weights = {}
@@ -35,8 +32,8 @@ class QuadraticDataGeneratingProcess(DataGeneratingProcess):
         if self.auto_gen:
             self.generation_process()
         treatment.append( np.matmul(confounder, self.weights['confounder=>treatment']) + np.random.randn(sample_size, len(self.treatment)) + self.bias['confounder=>treatment'] )
-    
-        for i in range(QuadraticDataGeneratingProcess.POWER):
+
+        for _ in range(QuadraticDataGeneratingProcess.POWER):
             outcome.append( np.matmul(confounder, self.weights['confounder=>outcome']) + np.matmul(effect_modifier, self.weights['effect_modifier=>outcome']) + np.matmul(treatment[0], self.weights['treatment=>outcome']) + self.bias['confounder=>outcome'] )
             y_control.append(np.matmul(confounder, self.weights['confounder=>outcome']) + np.matmul(effect_modifier, self.weights['effect_modifier=>outcome']) + np.matmul(control_value, self.weights['treatment=>outcome']) + self.bias['confounder=>outcome'] )
             y_treatment.append(np.matmul(confounder, self.weights['confounder=>outcome']) + np.matmul(effect_modifier, self.weights['effect_modifier=>outcome']) + np.matmul(treatment_value, self.weights['treatment=>outcome']) + self.bias['confounder=>outcome'] )
